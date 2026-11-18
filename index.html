@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <title>SQUZZER_CODER // Архитектура Telegram-ботов</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23ff4d00'/%3E%3C/svg%3E">
   <style>
 @font-face {
   font-family: 'Manrope';
@@ -1481,7 +1482,6 @@
       <nav class="tabs-nav" focusgroup="tablist nomemory" role="tablist" aria-label="Разделы конфигурации">
         <button type="button" role="tab" id="tab-calc" aria-selected="true" focusgroupstart tabindex="0">01 Конфигуратор</button>
         <button type="button" role="tab" id="tab-order" aria-selected="false" tabindex="-1">02 Бриф</button>
-        <button type="button" role="tab" id="tab-admin" aria-selected="false" tabindex="-1">03 Заявки<span class="tab-badge" id="admin-count-badge">3</span></button>
       </nav>
     </header>
 
@@ -1645,46 +1645,7 @@
                 <span>Отправить расчёт в @SQUZZER_CODER</span>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
               </a>
-              <button type="button" class="btn-emerald" id="btn-open-admin-after">Открыть в реестре заявок</button>
               <button type="button" class="btn-secondary" id="btn-new-order">Создать ещё одну заявку</button>
-            </div>
-          </div>
-        </section>
-
-        <!-- Panel 3: Order Registry & CSV -->
-        <section role="tabpanel" id="panel-admin" aria-labelledby="tab-admin" hidden>
-          <div class="panel-head">
-            <div>
-              <div class="panel-kicker">03 / РЕЕСТР И CSV-ЭКСПОРТ</div>
-              <h2 class="panel-title">Контроль заявок</h2>
-            </div>
-            <span class="approx-pill">СТАТУС: НОВАЯ → В РАБОТЕ → ГОТОВО</span>
-          </div>
-
-          <div class="panel-body">
-            <div class="kpi-grid">
-              <div class="kpi-card">
-                <div class="kpi-label">Заявок</div>
-                <div class="kpi-val" id="kpi-total">0</div>
-              </div>
-              <div class="kpi-card">
-                <div class="kpi-label">Ориентир. сумма</div>
-                <div class="kpi-val is-accent" id="kpi-revenue">~ 0 ₽</div>
-              </div>
-              <div class="kpi-card">
-                <div class="kpi-label">Готово</div>
-                <div class="kpi-val is-green" id="kpi-done">0</div>
-              </div>
-            </div>
-
-            <div class="orders-list" id="admin-orders-list"></div>
-
-            <div class="admin-footer-actions">
-              <button type="button" class="btn-emerald" id="btn-export-csv">
-                <span>Экспорт всех заявок в CSV</span>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-              </button>
-              <button type="button" class="btn-subtle" id="btn-reset-demo">Сбросить демо-заявки</button>
             </div>
           </div>
         </section>
@@ -1708,8 +1669,7 @@
       const MODULES = [{"key": "admin", "title": "Админ-панель и статусы", "short_title": "Админка", "price": 1000, "extra_hours": 12, "description": "Смена статусов заявок, статистика и управление из Telegram"}, {"key": "payment", "title": "Приём оплат (Карта / ЮKassa / Crypto)", "short_title": "Оплата", "price": 1500, "extra_hours": 12, "description": "Выставление счетов, проверка оплаты и автовыдача доступа"}, {"key": "sheets_api", "title": "Интеграция Google Sheets / API", "short_title": "Google Sheets / API", "price": 1500, "extra_hours": 24, "description": "Синхронизация заявок с таблицами, CRM или внешним REST API"}, {"key": "crm_db", "title": "База клиентов и рассылка", "short_title": "База клиентов", "price": 1200, "extra_hours": 12, "description": "Сегментация пользователей, история обращений и триггер-рассылки"}, {"key": "urgent", "title": "Срочный запуск (6–12 ч)", "short_title": "Срочный запуск", "price": 1500, "extra_hours": 0, "description": "Приоритетная сборка и запуск MVP в течение 6–12 часов"}];
       const DEFAULT_API_URL = "https://clientflow-orders-worker.oleg310111.workers.dev/api/orders";
       const OWNER_URL = "https://t.me/SQUZZER_CODER";
-      const STORAGE_KEY = "squzzer_clientflow_orders_v3";
-      const STORAGE_DRAFT_KEY = "squzzer_clientflow_draft_v3";
+      const STORAGE_DRAFT_KEY = "squzzer_clientflow_draft_v4";
 
       const NAME_ALLOWED_RE = /^[A-Za-zА-Яа-яЁё][A-Za-zА-Яа-яЁё\s\-.'’]{1,59}$/;
       const NAME_BAD_REPEAT_RE = /(?:--|\.\.|''|’’)/;
@@ -1809,48 +1769,6 @@
         } catch (_err) {}
       }
 
-      const STATUS_CYCLE = {
-        "Новая": "В работе",
-        "В работе": "Готово",
-        "Готово": "Новая"
-      };
-
-      const SEED_ORDERS = [
-        {
-          id: 14,
-          name: "Алексей Смирнов",
-          contact: "@alexey_biz",
-          description: "Бот-каталог с оплатой и CRM",
-          price: 6500,
-          deadline: "3 дня",
-          modules: ["Админка", "Оплата", "Google Sheets / API"],
-          status: "В работе",
-          createdAt: "2026-11-18 14:20"
-        },
-        {
-          id: 13,
-          name: "Марина К.",
-          contact: "@marina_store",
-          description: "Воронка записи и автоответчик",
-          price: 4000,
-          deadline: "1.5 дня",
-          modules: ["Оплата"],
-          status: "Готово",
-          createdAt: "2026-11-17 19:05"
-        },
-        {
-          id: 12,
-          name: "Тимур В.",
-          contact: "@timur_dev",
-          description: "Парсер цен конкурентов в таблицу",
-          price: 4000,
-          deadline: "2 дня",
-          modules: ["Google Sheets / API"],
-          status: "Готово",
-          createdAt: "2026-11-16 11:40"
-        }
-      ];
-
       function resolveApiEndpoint() {
         try {
           const params = new URLSearchParams(window.location.search);
@@ -1861,27 +1779,6 @@
       }
 
       const API_ENDPOINT = resolveApiEndpoint();
-      const memoryFallback = { value: null };
-
-      function readOrders() {
-        try {
-          const raw = window.localStorage.getItem(STORAGE_KEY);
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-          }
-        } catch (_err) {
-          if (memoryFallback.value) return memoryFallback.value;
-        }
-        return SEED_ORDERS.map((o) => ({ ...o }));
-      }
-
-      function writeOrders(orders) {
-        memoryFallback.value = orders.map((o) => ({ ...o }));
-        try {
-          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
-        } catch (_err) {}
-      }
 
       function formatRub(amount) {
         return `${Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")} ₽`;
@@ -1935,8 +1832,7 @@
         selectedKeys: initialKeys,
         displayedPrice: computeEstimate(initialKeys).totalPrice,
         wizardStep: 1,
-        activeTabIndex: 0,
-        orders: readOrders()
+        activeTabIndex: 0
       };
 
       function persistDraft() {
@@ -2416,21 +2312,16 @@
         submitLabel.textContent = "Отправка...";
 
         const est = computeEstimate(state.selectedKeys);
-        const nextId = state.orders.reduce((maxId, o) => Math.max(maxId, Number(o.id) || 0), 0) + 1;
-        const now = new Date();
-        const pad = (n) => String(n).padStart(2, "0");
-        const createdAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        const orderRef = String(Math.floor(100 + (Date.now() % 900)));
 
         const newOrder = {
-          id: nextId,
+          id: orderRef,
           name: normName,
           contact: normContact,
           description: normDesc,
           price: est.totalPrice,
           deadline: est.deadlineLabel,
-          modules: est.chosen.map((m) => m.short_title),
-          status: "Новая",
-          createdAt
+          modules: est.chosen.map((m) => m.short_title)
         };
 
         let sentOnline = false;
@@ -2438,32 +2329,51 @@
         let httpStatus = 0;
 
         if (API_ENDPOINT) {
-          try {
-            const resp = await fetch(API_ENDPOINT, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                id: newOrder.id,
-                name: newOrder.name,
-                contact: newOrder.contact,
-                description: newOrder.description,
-                optionKeys: state.selectedKeys,
-                price: newOrder.price,
-                deadline: newOrder.deadline,
-                modules: newOrder.modules,
-                source: tgWebApp ? "Telegram Mini App" : "Web Showcase",
-                company_fax_ext: document.getElementById("hp-fax-ext").value
-              })
-            });
-            httpStatus = resp.status;
-            const resData = await resp.json().catch(() => ({}));
-            if (!resp.ok || !resData.ok) {
-              serverError = resData.error || `HTTP ${resp.status}`;
-            } else {
-              sentOnline = true;
+          const payloadJson = JSON.stringify({
+            id: newOrder.id,
+            name: newOrder.name,
+            contact: newOrder.contact,
+            description: newOrder.description,
+            optionKeys: state.selectedKeys,
+            price: newOrder.price,
+            deadline: newOrder.deadline,
+            modules: newOrder.modules,
+            source: tgWebApp ? "Telegram Mini App" : "Web Showcase",
+            company_fax_ext: document.getElementById("hp-fax-ext").value
+          });
+
+          for (let attempt = 0; attempt < 2; attempt += 1) {
+            httpStatus = 0;
+            serverError = "";
+            const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+            const timeoutId = controller ? window.setTimeout(() => controller.abort(), 12000) : null;
+            try {
+              const resp = await fetch(API_ENDPOINT, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: payloadJson,
+                signal: controller ? controller.signal : undefined
+              });
+              httpStatus = resp.status;
+              const resData = await resp.json().catch(() => ({}));
+              if (!resp.ok || !resData.ok) {
+                serverError = resData.error || `HTTP ${resp.status}`;
+                if (httpStatus >= 400 && httpStatus < 500) break;
+              } else {
+                if (resData.orderId) newOrder.id = String(resData.orderId);
+                sentOnline = true;
+                break;
+              }
+            } catch (err) {
+              serverError = err && err.name === "AbortError"
+                ? "Сервер не ответил вовремя (таймаут)"
+                : (err && err.message ? err.message : "Нет соединения с сервером");
+            } finally {
+              if (timeoutId !== null) window.clearTimeout(timeoutId);
             }
-          } catch (err) {
-            serverError = err && err.message ? err.message : "Нет соединения с сервером";
+            if (!sentOnline && attempt === 0) {
+              await new Promise((r) => window.setTimeout(r, 650));
+            }
           }
         }
 
@@ -2476,9 +2386,6 @@
           return;
         }
 
-        state.orders.unshift(newOrder);
-        writeOrders(state.orders);
-        renderAdmin();
         writeDraft({ selectedKeys: state.selectedKeys, name: "", contact: "", description: "" });
 
         if (!sentOnline && tgWebApp && typeof tgWebApp.sendData === "function") {
@@ -2507,21 +2414,17 @@
           showToast(`Заявка #${newOrder.id} доставлена разработчику`, submitBtn);
         } else if (API_ENDPOINT && serverError) {
           successBox.classList.add("is-warning");
-          successTitle.textContent = `Сервер недоступен — заявка #${newOrder.id} сохранена локально`;
+          successTitle.textContent = `Не удалось доставить на сервер (${serverError}) — отправьте напрямую`;
           directTgBtn.removeAttribute("hidden");
-          showToast(`Не удалось отправить автоматически (${serverError})`, submitBtn);
+          showToast(`Ошибка сети (${serverError}) — отправьте в @SQUZZER_CODER`, submitBtn);
         } else {
-          successTitle.textContent = `Заявка #${newOrder.id} сохранена локально`;
+          successTitle.textContent = `Бриф #${newOrder.id} подготовлен`;
           directTgBtn.removeAttribute("hidden");
-          showToast(`Заявка #${newOrder.id} сохранена — можно отправить в @SQUZZER_CODER`, submitBtn);
+          showToast(`Нажмите кнопку ниже, чтобы отправить бриф в @SQUZZER_CODER`, submitBtn);
         }
 
         successMeta.textContent = `${newOrder.name} (${newOrder.contact}) · примерно ~${formatRub(newOrder.price)} · ~${newOrder.deadline}`;
         successBox.removeAttribute("hidden");
-      });
-
-      document.getElementById("btn-open-admin-after").addEventListener("click", () => {
-        selectTab(document.getElementById("tab-admin"));
       });
 
       document.getElementById("btn-new-order").addEventListener("click", () => {
@@ -2537,111 +2440,7 @@
         setWizardStep(1, true);
       });
 
-      // Admin Registry
-      const kpiTotalEl = document.getElementById("kpi-total");
-      const kpiRevEl = document.getElementById("kpi-revenue");
-      const kpiDoneEl = document.getElementById("kpi-done");
-      const adminBadgeEl = document.getElementById("admin-count-badge");
-      const adminListEl = document.getElementById("admin-orders-list");
-
-      function statusClass(status) {
-        if (status === "Готово") return "status-done";
-        if (status === "В работе") return "status-progress";
-        return "status-new";
-      }
-
-      function renderAdmin() {
-        const orders = state.orders;
-        const total = orders.length;
-        const totalRev = orders.reduce((acc, o) => acc + (Number(o.price) || 0), 0);
-        const doneCount = orders.filter((o) => o.status === "Готово").length;
-
-        kpiTotalEl.textContent = String(total);
-        kpiRevEl.textContent = `~ ${formatRub(totalRev)}`;
-        kpiDoneEl.textContent = String(doneCount);
-        adminBadgeEl.textContent = String(total);
-
-        adminListEl.replaceChildren();
-        orders.forEach((order) => {
-          const row = document.createElement("div");
-          row.className = "order-row";
-
-          const main = document.createElement("div");
-          main.className = "order-main";
-
-          const head = document.createElement("div");
-          head.className = "order-head";
-          head.textContent = `#${order.id} · ${order.name} (${order.contact})`;
-
-          const meta = document.createElement("div");
-          meta.className = "order-meta";
-          const mods = Array.isArray(order.modules) && order.modules.length ? order.modules.join(", ") : "Базовый бот";
-          meta.textContent = `~${formatRub(order.price)} · ~${order.deadline} · ${order.description} · ${mods}`;
-
-          main.append(head, meta);
-
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = `status-btn ${statusClass(order.status)}`;
-          btn.textContent = order.status;
-          btn.setAttribute("aria-label", `Сменить статус заявки #${order.id} (сейчас ${order.status})`);
-          btn.addEventListener("click", () => {
-            order.status = STATUS_CYCLE[order.status] || "Новая";
-            writeOrders(state.orders);
-            renderAdmin();
-            showToast(`Заявка #${order.id}: статус «${order.status}»`, btn);
-          });
-
-          row.append(main, btn);
-          adminListEl.append(row);
-        });
-      }
-
-      // Safe CSV Export (UTF-8 BOM + formula-injection neutralization)
-      function csvCell(val) {
-        let str = String(val ?? "");
-        if (/^[=+\-@\t\r]/.test(str)) {
-          str = "'" + str;
-        }
-        return `"${str.replace(/"/g, '""')}"`;
-      }
-
-      document.getElementById("btn-export-csv").addEventListener("click", (e) => {
-        const header = ["ID", "Имя", "Контакт", "Задача", "Модули", "Примерная_стоимость_RUB", "Примерный_срок", "Статус", "Дата"];
-        const rows = state.orders.map((o) => [
-          o.id,
-          o.name,
-          o.contact,
-          o.description,
-          Array.isArray(o.modules) ? o.modules.join("; ") : "",
-          o.price,
-          o.deadline,
-          o.status,
-          o.createdAt
-        ].map(csvCell).join(","));
-
-        const csvContent = "\uFEFF" + [header.map(csvCell).join(","), ...rows].join("\r\n");
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "clientflow_orders.csv";
-        document.body.append(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        showToast("Файл clientflow_orders.csv сформирован", e.currentTarget);
-      });
-
-      document.getElementById("btn-reset-demo").addEventListener("click", (e) => {
-        state.orders = SEED_ORDERS.map((o) => ({ ...o }));
-        writeOrders(state.orders);
-        renderAdmin();
-        showToast("Демо-заявки сброшены", e.currentTarget);
-      });
-
       renderCalculator();
-      renderAdmin();
     })();
   </script>
 </body>
